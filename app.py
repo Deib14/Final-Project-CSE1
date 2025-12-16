@@ -9,6 +9,10 @@ init_db(app)
 
 API_KEY = "CSE1-SECURE-KEY"
 
+@app.route('/')
+def home():
+    return "API is running"
+
 def authorized():
     return request.headers.get('Authorization') == API_KEY
 
