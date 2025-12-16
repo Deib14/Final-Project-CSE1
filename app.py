@@ -15,3 +15,10 @@ def to_xml(data, root_name='employees'):
         for k, v in row.items():
             ET.SubElement(emp, k).text = str(v)
     return ET.tostring(root)
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    if data['username'] == 'admin' and data['password'] == 'admin':
+        return jsonify({'token': generate_token('admin')})
+    return jsonify({'error': 'Invalid credentials'}), 401
