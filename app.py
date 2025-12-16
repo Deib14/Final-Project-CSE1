@@ -12,10 +12,10 @@ API_KEY = "CSE1-SECURE-KEY"
 def authorized():
     return request.headers.get('Authorization') == API_KEY
 
-def to_xml(data, root_name='employees'):
-    root = ET.Element(root_name)
+def to_xml(data):
+    root = ET.Element("employees")
     for row in data:
-        emp = ET.SubElement(root, 'employee')
+        emp = ET.SubElement(root, "employee")
         for k, v in row.items():
             ET.SubElement(emp, k).text = str(v)
     return ET.tostring(root)
@@ -28,28 +28,21 @@ def search_employee():
     role = request.args.get('role')
     cur = mysql.connection.cursor(dictionary=True)
     cur.execute("SELECT * FROM employees WHERE role=%s", (role,))
-    rows = cur.fetchall()
-    return jsonify(rows)
-
+    return jsonify(cur.fetchall())
 
 @app.route('/employees')
 def get_employees():
     if not authorized():
         return jsonify({'error': 'Unauthorized'}), 401
 
-    fmt = request.args.get('format', 'json')
     cur = mysql.connection.cursor(dictionary=True)
     cur.execute("SELECT * FROM employees")
     data = cur.fetchall()
 
-    if fmt == 'xml':
-        return make_response(
-            to_xml(data),
-            200,
-            {'Content-Type': 'application/xml'}
-        )
+    if request.args.get('format') == 'xml':
+        return make_response(to_xml(data), 200,
+                             {'Content-Type': 'application/xml'})
     return jsonify(data)
-
 
 @app.route('/employees', methods=['POST'])
 def add_employee():
@@ -73,7 +66,6 @@ def add_employee():
         data.get('salary')
     ))
     mysql.connection.commit()
-
     return jsonify({'message': 'Employee added'}), 201
 
 @app.route('/employees/<int:id>', methods=['PUT'])
@@ -87,13 +79,8 @@ def update_employee(id):
         UPDATE employees
         SET role=%s, salary=%s
         WHERE id=%s
-    """, (
-        data.get('role'),
-        data.get('salary'),
-        id
-    ))
+    """, (data.get('role'), data.get('salary'), id))
     mysql.connection.commit()
-
     return jsonify({'message': 'Employee updated'})
 
 @app.route('/employees/<int:id>', methods=['DELETE'])
@@ -104,9 +91,7 @@ def delete_employee(id):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM employees WHERE id=%s", (id,))
     mysql.connection.commit()
-
     return jsonify({'message': 'Employee deleted'})
-
 
 if __name__ == '__main__':
     app.run(debug=True)
